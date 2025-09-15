@@ -1,0 +1,154 @@
+{
+  "version": "0.1.0",
+  "application": {
+    "name": "Regis",
+    "window": {
+      "width": 800,
+      "height": 600,
+      "min_width": 600,
+      "min_height": 400,
+      "resizable": true,
+      "center": true,
+      "title": "Regis - Boundary Client"
+    },
+    "system_tray": {
+      "enabled": true,
+      "minimize_to_tray": true,
+      "show_notifications": true
+    },
+    "auto_connect": {
+      "single_target": true,
+      "remember_last_server": true
+    }
+  },
+  "boundary": {
+    "cli_path": "boundary",
+    "cli_timeout_seconds": 30,
+    "connection_timeout_seconds": 60,
+    "token_refresh_threshold_minutes": 5
+  },
+  "servers": [
+    {
+      "id": "demo-boundary",
+      "name": "Demo Boundary Server",
+      "description": "Demo HashiCorp Boundary server for testing",
+      "url": "https://demo.boundary.io",
+      "enabled": true,
+      "oidc": {
+        "auto_discover": true,
+        "discovery_url": "https://demo.boundary.io/.well-known/openid_configuration",
+        "client_id": "demo-client",
+        "scopes": ["openid", "profile", "email"],
+        "provider_hints": {
+          "name": "Demo Provider",
+          "type": "oidc",
+          "logo_url": null
+        }
+      },
+      "advanced": {
+        "verify_ssl": true,
+        "custom_ca_path": null,
+        "proxy_url": null,
+        "headers": {}
+      }
+    },
+    {
+      "id": "local-boundary",
+      "name": "Local Development Server",
+      "description": "Local Boundary server for development",
+      "url": "http://localhost:9200",
+      "enabled": true,
+      "oidc": {
+        "auto_discover": true,
+        "discovery_url": "http://localhost:9200/.well-known/openid_configuration",
+        "client_id": "local-client",
+        "scopes": ["openid", "profile"],
+        "provider_hints": {
+          "name": "Local Auth",
+          "type": "oidc",
+          "logo_url": null
+        }
+      },
+      "advanced": {
+        "verify_ssl": false,
+        "custom_ca_path": null,
+        "proxy_url": null,
+        "headers": {}
+      }
+    },
+    {
+      "id": "staging-boundary",
+      "name": "Staging Environment",
+      "description": "Staging Boundary server",
+      "url": "https://boundary-staging.example.com",
+      "enabled": false,
+      "oidc": {
+        "auto_discover": true,
+        "discovery_url": "https://sso.example.com/.well-known/openid_configuration",
+        "client_id": "boundary-staging",
+        "scopes": ["openid", "profile", "email", "groups"],
+        "provider_hints": {
+          "name": "Corporate SSO",
+          "type": "saml",
+          "logo_url": "https://example.com/logo.png"
+        }
+      },
+      "advanced": {
+        "verify_ssl": true,
+        "custom_ca_path": "/etc/ssl/certs/corporate-ca.pem",
+        "proxy_url": "http://proxy.example.com:8080",
+        "headers": {
+          "X-Corporate-Header": "boundary-access"
+        }
+      }
+    }
+  ],
+  "logging": {
+    "level": "debug",
+    "file_path": null,
+    "console": true,
+    "log_dir": "../logs",
+    "max_log_size_mb": 10,
+    "file_rotation": true
+  },
+  "rdp": {
+    "clients": {
+      "windows": {
+        "executable": "mstsc",
+        "args": ["/v:{host}:{port}"],
+        "auto_detect": true,
+        "preferred_apps": []
+      },
+      "macos": {
+        "executable": "open",
+        "args": ["-a", "Microsoft Remote Desktop", "rdp://{host}:{port}"],
+        "auto_detect": true,
+        "preferred_apps": ["Microsoft Remote Desktop", "Royal TSX", "Remote Desktop Scanner"]
+      },
+      "linux": {
+        "executable": "rdesktop",
+        "args": ["-a", "16", "{host}:{port}"],
+        "auto_detect": true,
+        "preferred_apps": ["rdesktop", "freerdp", "vinagre"]
+      }
+    },
+    "connection": {
+      "fullscreen": false,
+      "resolution": "1920x1080",
+      "color_depth": 32
+    }
+  },
+  "ui": {
+    "theme": "system",
+    "compact_mode": false,
+    "show_connection_details": true,
+    "auto_refresh_targets": true,
+    "refresh_interval_seconds": 30
+  },
+  "security": {
+    "token_storage": "keychain",
+    "auto_logout_minutes": 60,
+    "verify_certificates": true,
+    "allowed_redirect_hosts": []
+  }
+}

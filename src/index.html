@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regis - Boundary Client</title>
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div id="app">
+        <header class="header">
+            <h1 class="header__title">Regis</h1>
+            <p class="header__subtitle">Lightweight Boundary Client</p>
+        </header>
+
+        <main class="main">
+            <div class="server-selection" id="server-selection">
+                <h2>Select Boundary Server</h2>
+                <div class="server-list" id="server-list">
+                    <!-- Server list will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="auth-section hidden" id="auth-section">
+                <h2>Authentication</h2>
+                <div class="auth-content" id="auth-content">
+                    <!-- Authentication UI will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <div class="targets-section hidden" id="targets-section">
+                <h2>Available Targets</h2>
+                <div class="targets-list" id="targets-list">
+                    <!-- Targets will be populated by JavaScript -->
+                </div>
+            </div>
+        </main>
+
+        <div class="status-bar" id="status-bar">
+            <span class="status-text" id="status-text">Ready</span>
+            <div class="loading-spinner hidden" id="loading-spinner"></div>
+        </div>
+    </div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>
