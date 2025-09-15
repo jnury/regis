@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regis - Boundary GUI Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .welcome-content {
+            text-align: center;
+        }
+
+        .welcome-message {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+
+        .server-selection {
+            margin-bottom: 20px;
+        }
+
+        .server-list {
+            text-align: left;
+            margin-bottom: 30px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+
+        .server-item {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #fafafa;
+        }
+
+        .server-item:hover {
+            border-color: #007acc;
+            background: #f0f8ff;
+        }
+
+        .server-item.selected {
+            border-color: #007acc;
+            background: #e6f3ff;
+        }
+
+        .server-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .server-url {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .server-description {
+            color: #888;
+            font-size: 13px;
+        }
+
+        .server-meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .server-environment {
+            background: #f0f0f0;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .server-environment.production {
+            background: #ffe6e6;
+            color: #cc0000;
+        }
+
+        .server-environment.staging {
+            background: #fff3e0;
+            color: #cc6600;
+        }
+
+        .server-environment.development {
+            background: #e8f5e8;
+            color: #2d5a2d;
+        }
+
+        .actions {
+            text-align: center;
+        }
+
+        .connect-btn {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .connect-btn:hover:not(:disabled) {
+            background: #005999;
+        }
+
+        .connect-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #ffe6e6;
+            border: 1px solid #ffcccc;
+            color: #cc0000;
+            padding: 12px;
+            border-radius: 4px;
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Regis</h1>
+        <div class="welcome-content">
+            <p class="welcome-message">Welcome to Regis. Please select a Boundary server to connect to:</p>
+
+            <div class="server-selection">
+                <div id="server-list" class="server-list">
+                    <div class="loading">Loading servers...</div>
+                </div>
+
+                <div class="actions">
+                    <button id="connect-btn" class="connect-btn" disabled>Connect to Server</button>
+                </div>
+            </div>
+
+            <div id="error-message" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+    <script src="main.js"></script>
+</body>
+</html>

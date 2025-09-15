@@ -1,79 +1,15 @@
 {
   "name": "regis",
-  "version": "0.1.0",
-  "description": "A lightweight Boundary GUI client for macOS and Windows",
-  "type": "module",
+  "version": "0.2.1",
+  "description": "A lightweight Boundary GUI client",
+  "main": "index.js",
   "scripts": {
-    "dev": "tauri dev",
-    "build": "tauri build",
-    "lint": "eslint src --ext .js",
-    "format": "prettier --write 'src/**/*.{js,css,html}'",
     "tauri": "tauri",
-    "preview": "vite preview --port 5173",
-    "check": "npm run lint && npm run format",
-    "clean": "rm -rf dist src-tauri/target",
-    "setup": "npm install && cd src-tauri && cargo fetch",
-    "test": "vitest",
-    "test:ui": "vitest --ui",
-    "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui",
-    "test:e2e:debug": "playwright test --debug",
-    "test:rust": "cd src-tauri && cargo test",
-    "test:rust:integration": "cd src-tauri && cargo test --test integration_test",
-    "test:all": "npm run test:rust && npm run test:run && npm run test:e2e",
-    "typecheck": "echo 'No TypeScript in use'"
+    "dev": "tauri dev",
+    "build": "tauri build"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/your-org/regis.git"
-  },
-  "keywords": [
-    "boundary",
-    "hashicorp",
-    "tauri",
-    "desktop",
-    "rdp",
-    "oidc",
-    "gui"
-  ],
-  "author": "Julien Nury",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/your-org/regis/issues"
-  },
-  "homepage": "https://github.com/your-org/regis#readme",
   "devDependencies": {
     "@tauri-apps/cli": "^2.0.0",
-    "@playwright/test": "^1.40.0",
-    "@vitest/coverage-v8": "^1.0.0",
-    "@vitest/ui": "^1.0.0",
-    "eslint": "^8.57.0",
-    "jsdom": "^23.0.0",
-    "playwright": "^1.40.0",
-    "prettier": "^3.2.5",
-    "vite": "^5.1.0",
-    "vitest": "^1.0.0"
-  },
-  "dependencies": {
     "@tauri-apps/api": "^2.0.0"
-  },
-  "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=9.0.0"
-  },
-  "os": [
-    "darwin",
-    "win32"
-  ],
-  "private": true,
-  "tauri": {
-    "build": {
-      "runner": "npm run build"
-    },
-    "dev": {
-      "runner": "npm run preview"
-    }
   }
 }

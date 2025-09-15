@@ -1,76 +1,20 @@
 [package]
 name = "regis"
 version = "0.1.0"
-description = "A lightweight Boundary GUI client for macOS and Windows"
-authors = ["Julien Nury <email@example.com>"]
-license = "MIT"
-repository = "https://github.com/your-org/regis"
+description = "A lightweight Boundary GUI client"
+authors = ["you"]
+license = ""
+repository = ""
 edition = "2021"
-rust-version = "1.77.2"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[lib]
-name = "regis_lib"
-crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2.4.1", features = [] }
+tauri-build = { version = "2.0", features = [] }
 
 [dependencies]
-# Core Tauri dependencies
-tauri = { version = "2.8.5", features = ["tray-icon", "image-ico", "image-png"] }
-tauri-plugin-log = "2"
-
-# Tauri plugins
-tauri-plugin-shell = "2"
-tauri-plugin-dialog = "2"
-tauri-plugin-fs = "2"
-tauri-plugin-process = "2"
-
-# Async runtime
-tokio = { version = "1.40", features = ["full"] }
-
-# Serialization
+tauri = { version = "2.0", features = [] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
-# HTTP client for OIDC requests
-reqwest = { version = "0.12", features = ["json", "cookies", "rustls-tls"] }
-url = "2.5"
-
-# Configuration and file handling
-toml = "0.8"
-dirs = "5.0"
-
-# Error handling
-anyhow = "1.0"
-thiserror = "1.0"
-
-# Logging
-log = "0.4"
-env_logger = "0.11"
-fern = "0.7"
-
-# Date/time handling for token expiry
-chrono = { version = "0.4", features = ["serde"] }
-
-# System integration
-keyring = "2.3"
-open = "5.0"
-
-# JSON Web Token handling for OIDC
-jsonwebtoken = "9.2"
-base64 = "0.22"
-
-# Platform-specific dependencies
-[target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["winuser", "shellapi"] }
-
-[target.'cfg(target_os = "macos")'.dependencies]
-cocoa = "0.25"
-objc = "0.2"
-
-[dev-dependencies]
-tempfile = "3.8"
-tauri = { version = "2.0", features = ["test"] }
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

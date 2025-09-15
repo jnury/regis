@@ -1,0 +1,36 @@
+{
+  "servers": [
+    {
+      "id": "prod-boundary",
+      "name": "Production Boundary",
+      "url": "https://boundary.company.com",
+      "description": "Production environment for secure access",
+      "environment": "production",
+      "region": "us-east-1"
+    },
+    {
+      "id": "staging-boundary",
+      "name": "Staging Boundary",
+      "url": "https://boundary-staging.company.com",
+      "description": "Staging environment for testing",
+      "environment": "staging",
+      "region": "us-west-2"
+    },
+    {
+      "id": "dev-boundary",
+      "name": "Development Boundary",
+      "url": "https://boundary-dev.company.com",
+      "description": "Development environment",
+      "environment": "development",
+      "region": "us-west-1"
+    },
+    {
+      "id": "local-boundary",
+      "name": "Local Boundary",
+      "url": "http://localhost:9200",
+      "description": "Local development server",
+      "environment": "local",
+      "region": "local"
+    }
+  ]
+}
