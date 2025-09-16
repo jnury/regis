@@ -1,0 +1,50 @@
+{
+  "logging": {
+    "level": "info",
+    "enabled": true,
+    "console_output": false,
+    "file_output": true,
+    "log_directory": "auto",
+    "max_file_size_mb": 10,
+    "max_files": 5,
+    "log_format": "standard",
+    "component_levels": {
+      "app": "info",
+      "auth": "info",
+      "connection": "info",
+      "config": "info",
+      "frontend": "warn"
+    }
+  },
+  "ui": {
+    "theme": "system",
+    "startup_behavior": "show_window",
+    "minimize_to_tray": true,
+    "confirm_exit": false,
+    "remember_window_state": true
+  },
+  "security": {
+    "auto_logout_minutes": 60,
+    "remember_auth": true,
+    "ssl_verify": true,
+    "timeout_seconds": 30
+  },
+  "connection": {
+    "auto_connect_single_target": true,
+    "connection_timeout_seconds": 10,
+    "retry_attempts": 3,
+    "retry_delay_seconds": 2
+  },
+  "rdp": {
+    "auto_launch": true,
+    "preferred_client": "auto",
+    "fullscreen": false,
+    "resolution": "auto"
+  },
+  "advanced": {
+    "debug_mode": false,
+    "developer_tools": false,
+    "crash_reporting": true,
+    "telemetry": false
+  }
+}

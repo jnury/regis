@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/config.json",
   "productName": "Regis",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "identifier": "com.regis.client",
   "build": {
     "beforeDevCommand": "",
@@ -46,7 +46,7 @@
       "providerShortName": null,
       "signingIdentity": null
     },
-    "resources": ["../servers.json"],
+    "resources": ["../servers.json", "../config.json"],
     "shortDescription": "",
     "targets": "all",
     "windows": {
