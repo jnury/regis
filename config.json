@@ -46,5 +46,9 @@
     "developer_tools": false,
     "crash_reporting": true,
     "telemetry": false
+  },
+  "boundary": {
+    "cli_path": "boundary-cli/boundary_0.19.3_darwin_arm64/boundary",
+    "auto_detect": false
   }
 }
