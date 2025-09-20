@@ -101,6 +101,10 @@ pub struct Server {
     pub environment: String,
     pub region: String,
     pub boundary_cli_path: Option<String>, // Optional per-server CLI path override
+    #[serde(rename = "authScope")]
+    pub auth_scope: Option<String>, // Optional auth scope for the server
+    #[serde(rename = "secondaryHost")]
+    pub secondary_host: Option<String>, // Optional secondary host
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -654,9 +658,16 @@ async fn execute_boundary_command(
     cmd.args(&args);
 
     // Add server address if provided
+    let mut full_command_args = args.clone();
     if let Some(addr) = server_addr {
         cmd.arg("-addr").arg(addr);
+        full_command_args.push("-addr");
+        full_command_args.push(addr);
     }
+
+    // Log the complete command that can be copied and run directly
+    let complete_command = format!("{} {}", cli_path, full_command_args.join(" "));
+    info!("COMPLETE CLI COMMAND (copy this to test manually): {}", complete_command);
 
     // Configure stdio
     cmd.stdout(Stdio::piped())
@@ -2168,13 +2179,10 @@ fn load_resource_with_fallback(app: &AppHandle, filename: &str) -> Result<String
     }
 }
 
-// Load configuration with user overrides
+// Helper function to load system configuration
 #[instrument(skip(app))]
-fn load_config(app: &AppHandle) -> Config {
-    debug!("Loading application configuration with user overrides");
-
-    // Step 1: Load system configuration
-    let mut config = match load_resource_with_fallback(app, "config.json") {
+fn load_system_config(app: &AppHandle) -> Config {
+    match load_resource_with_fallback(app, "config.json") {
         Ok(config_content) => {
             match serde_json::from_str::<Config>(&config_content) {
                 Ok(parsed_config) => {
@@ -2191,9 +2199,47 @@ fn load_config(app: &AppHandle) -> Config {
             error!("Failed to load system config.json: {}. Using default configuration.", e);
             Config::default()
         }
+    }
+}
+
+// Load configuration with user overrides
+#[instrument(skip(app))]
+fn load_config(app: &AppHandle) -> Config {
+    debug!("Loading application configuration with user overrides");
+
+    // Step 1: Check for local test configuration first (for development)
+    let mut local_test_config_path = PathBuf::from("local-test-config.json");
+    // Try both current directory and project root (for Tauri dev mode)
+    if !local_test_config_path.exists() {
+        local_test_config_path = PathBuf::from("../local-test-config.json");
+    }
+
+    let mut config = if local_test_config_path.exists() {
+        info!("Found local test configuration file: {:?}", local_test_config_path);
+        match fs::read_to_string(&local_test_config_path) {
+            Ok(test_config_content) => {
+                match serde_json::from_str::<Config>(&test_config_content) {
+                    Ok(parsed_config) => {
+                        info!("Successfully loaded and parsed local test config");
+                        parsed_config
+                    }
+                    Err(e) => {
+                        error!("Failed to parse local test config: {}. Falling back to system config.", e);
+                        load_system_config(app)
+                    }
+                }
+            }
+            Err(e) => {
+                error!("Failed to read local test config: {}. Falling back to system config.", e);
+                load_system_config(app)
+            }
+        }
+    } else {
+        // Step 2: Load system configuration (fallback)
+        load_system_config(app)
     };
 
-    // Step 2: Try to load user configuration overrides
+    // Step 3: Try to load user configuration overrides
     match get_user_config_path() {
         Ok(user_config_path) => {
             debug!("Checking for user config at: {:?}", user_config_path);
@@ -2237,9 +2283,43 @@ fn load_config(app: &AppHandle) -> Config {
 async fn load_servers(app: AppHandle) -> Result<Vec<Server>, String> {
     info!("Loading servers from system and user configurations");
 
-    // Step 1: Load system servers
+    // Step 1: Check for local test servers first (for development)
+    let mut local_test_servers_path = PathBuf::from("local-test-servers.json");
+    // Try both current directory and project root (for Tauri dev mode)
+    if !local_test_servers_path.exists() {
+        local_test_servers_path = PathBuf::from("../local-test-servers.json");
+    }
+
     let mut all_servers = Vec::new();
 
+    if local_test_servers_path.exists() {
+        info!("Found local test servers file: {:?}", local_test_servers_path);
+        match fs::read_to_string(&local_test_servers_path) {
+            Ok(test_servers_content) => {
+                match serde_json::from_str::<ServerConfig>(&test_servers_content) {
+                    Ok(config) => {
+                        info!("Successfully loaded {} local test servers", config.servers.len());
+                        debug!("Local test servers: {:?}", config.servers);
+                        all_servers.extend(config.servers);
+                        // Return early - use only test servers in development mode
+                        return Ok(all_servers);
+                    }
+                    Err(e) => {
+                        let error_msg = format!("Failed to parse local test servers: {}", e);
+                        error!("{}", error_msg);
+                        return Err(error_msg);
+                    }
+                }
+            }
+            Err(e) => {
+                let error_msg = format!("Failed to read local test servers: {}", e);
+                error!("{}", error_msg);
+                return Err(error_msg);
+            }
+        }
+    }
+
+    // Step 2: Load system servers if no local test servers
     match load_resource_with_fallback(&app, "servers.json") {
         Ok(config_content) => {
             match serde_json::from_str::<ServerConfig>(&config_content) {
@@ -2262,7 +2342,7 @@ async fn load_servers(app: AppHandle) -> Result<Vec<Server>, String> {
         }
     }
 
-    // Step 2: Try to load user servers (additive)
+    // Step 3: Try to load user servers (additive)
     match get_user_servers_path() {
         Ok(user_servers_path) => {
             debug!("Checking for user servers at: {:?}", user_servers_path);

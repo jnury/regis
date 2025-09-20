@@ -150,11 +150,469 @@
             margin-top: 20px;
             text-align: center;
         }
+
+        /* Target Selection UI */
+        .target-selection {
+            text-align: left;
+        }
+
+        .target-header {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .target-header h2 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .target-header p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .target-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .target-search {
+            flex: 1;
+            min-width: 200px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .refresh-btn, .back-btn {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f8f8f8;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .refresh-btn:hover, .back-btn:hover {
+            background: #e8e8e8;
+        }
+
+        .target-list-container {
+            position: relative;
+            min-height: 200px;
+        }
+
+        .loading-state, .error-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #007acc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .target-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .target-group {
+            margin-bottom: 24px;
+        }
+
+        .target-group-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .target-type-icon {
+            font-size: 18px;
+        }
+
+        .target-group-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .target-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #fafafa;
+        }
+
+        .target-item:hover {
+            border-color: #007acc;
+            background: #f0f8ff;
+        }
+
+        .target-item.selected {
+            border-color: #007acc;
+            background: #e6f3ff;
+        }
+
+        .target-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .target-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .target-description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .target-details {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .target-id, .target-address {
+            color: #888;
+            font-size: 12px;
+        }
+
+        .target-connect-btn {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .target-connect-btn:hover:not(:disabled) {
+            background: #005999;
+        }
+
+        .target-connect-btn:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .no-targets-state, .auto-connect-state {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .no-targets-state h3, .auto-connect-state h3 {
+            color: #333;
+            margin-bottom: 16px;
+        }
+
+        .no-targets-state p, .auto-connect-state p {
+            color: #666;
+            margin-bottom: 12px;
+        }
+
+        .retry-btn {
+            background: #007acc;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .retry-btn:hover {
+            background: #005999;
+        }
+
+        .error-content {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .error-content h3 {
+            color: #cc0000;
+            margin-bottom: 16px;
+        }
+
+        .error-content p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* Connection Status UI */
+        .connection-status {
+            text-align: left;
+        }
+
+        .connection-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .connection-header h2 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .connection-header p {
+            color: #666;
+        }
+
+        .connection-details {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .connection-info {
+            margin-bottom: 24px;
+        }
+
+        .connection-info h3 {
+            color: #333;
+            margin-bottom: 16px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-item .label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .detail-item .value {
+            color: #333;
+            font-family: monospace;
+        }
+
+        .status-active {
+            color: #28a745 !important;
+            font-weight: bold;
+        }
+
+        .connection-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .primary-btn, .secondary-btn, .danger-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            font-size: 14px;
+        }
+
+        .primary-btn {
+            background: #007acc;
+            color: white;
+        }
+
+        .primary-btn:hover {
+            background: #005999;
+        }
+
+        .secondary-btn {
+            background: #6c757d;
+            color: white;
+        }
+
+        .secondary-btn:hover {
+            background: #5a6268;
+        }
+
+        .danger-btn {
+            background: #dc3545;
+            color: white;
+        }
+
+        .danger-btn:hover {
+            background: #c82333;
+        }
+
+        /* Manual Connection Info */
+        .manual-connection-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+
+        .manual-connection-info h4 {
+            color: #856404;
+            margin-bottom: 12px;
+        }
+
+        .manual-connection-info p {
+            color: #856404;
+            margin-bottom: 12px;
+        }
+
+        .connection-details div {
+            margin-bottom: 4px;
+            font-family: monospace;
+            color: #333;
+        }
+
+        .connection-info-notification {
+            margin-bottom: 20px;
+        }
+
+        /* Scope Selection UI (for completeness) */
+        .scope-selection {
+            text-align: left;
+        }
+
+        .scope-selection h3 {
+            color: #333;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .scope-selection p {
+            color: #666;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .scope-list {
+            margin-bottom: 20px;
+        }
+
+        .scope-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #fafafa;
+        }
+
+        .scope-item:hover {
+            border-color: #007acc;
+            background: #f0f8ff;
+        }
+
+        .scope-name {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .scope-description {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .scope-actions {
+            text-align: center;
+        }
+
+        /* Authentication Success UI */
+        .auth-success {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .auth-success h2 {
+            color: #28a745;
+            margin-bottom: 16px;
+        }
+
+        .auth-success p {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                padding: 20px;
+            }
+
+            .target-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .target-search {
+                min-width: unset;
+            }
+
+            .target-details {
+                flex-direction: column;
+                gap: 4px;
+            }
+
+            .connection-actions {
+                flex-direction: column;
+            }
+
+            .detail-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Regis</h1>
+        <!-- Build timestamp: 2025-09-19T18:09:50Z -->
+        <div style="text-align: center; color: #888; font-size: 12px; margin-bottom: 20px;">
+            Build: 2025-09-19T18:09:50Z
+        </div>
         <div class="welcome-content">
             <p class="welcome-message">Welcome to Regis. Please select a Boundary server to connect to:</p>
 

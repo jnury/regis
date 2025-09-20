@@ -1,4 +1,5 @@
 // Regis - Boundary GUI Client
+// Build timestamp: 2025-09-19T18:09:00Z
 
 // Logging system
 class Logger {
@@ -9,11 +10,15 @@ class Logger {
 
     async init() {
         try {
-            // Import Tauri API
-            const { invoke } = await import('@tauri-apps/api/core');
-            this.invoke = invoke;
-            this.isInitialized = true;
-            this.info('Frontend logging system initialized');
+            // Check if Tauri is available
+            if (window.__TAURI__ && window.__TAURI__.core) {
+                this.invoke = window.__TAURI__.core.invoke;
+                this.isInitialized = true;
+                this.info('Frontend logging system initialized');
+            } else {
+                console.warn('Tauri environment not available for logging');
+                this.isInitialized = false;
+            }
         } catch (error) {
             console.error('Failed to initialize frontend logging:', error);
             this.isInitialized = false;
@@ -87,8 +92,7 @@ async function loadAppConfig() {
             return;
         }
 
-        const { invoke } = await import('@tauri-apps/api/core');
-        appConfig = await invoke('get_config');
+        appConfig = await window.__TAURI__.core.invoke('get_config');
 
         await logger.info('Application configuration loaded successfully', 'config', {
             logLevel: appConfig.logging.level,
@@ -243,23 +247,51 @@ function updateConnectButton() {
 
 // Handle connect button click - starts OIDC authentication
 async function handleConnect() {
+    console.log('handleConnect called!', { selectedServer });
+    await logger.info('Connect button clicked', 'auth');
+
     if (!selectedServer) {
+        console.log('No server selected');
         showError('Please select a server first');
         return;
     }
 
-    await logger.info('Starting authentication for server', 'auth', { server: selectedServer.name });
+    console.log('Starting authentication for server:', selectedServer.name);
+    try {
+        await logger.info('Starting authentication for server', 'auth', { server: selectedServer.name });
+    } catch (e) {
+        console.warn('Logger failed:', e);
+    }
 
     try {
+        console.log('Starting try block...');
+
         // Update UI to show authentication in progress
+        console.log('Calling updateConnectButtonForAuth...');
         updateConnectButtonForAuth(true);
+
+        console.log('Calling hideError...');
         hideError();
 
         // First, discover OIDC auth methods for this server
-        await logger.info('Discovering OIDC auth methods', 'auth');
-        const authMethods = await window.__TAURI__.core.invoke('discover_oidc_auth_methods_command', {
-            serverAddr: selectedServer.url
-        });
+        console.log('About to discover OIDC auth methods...');
+        try {
+            await logger.info('Discovering OIDC auth methods', 'auth');
+        } catch (e) {
+            console.warn('Logger failed:', e);
+        }
+
+        console.log('Calling discover_oidc_auth_methods_command with serverId:', selectedServer.id);
+        let authMethods;
+        try {
+            authMethods = await window.__TAURI__.core.invoke('discover_oidc_auth_methods_command', {
+                serverId: selectedServer.id
+            });
+            console.log('OIDC discovery result:', authMethods);
+        } catch (discoveryError) {
+            console.error('OIDC discovery failed with error:', discoveryError);
+            throw new Error(`OIDC discovery failed: ${discoveryError.message || discoveryError}`);
+        }
 
         if (!authMethods || authMethods.length === 0) {
             throw new Error('No OIDC authentication methods available for this server');
@@ -271,9 +303,9 @@ async function handleConnect() {
 
         // Start OIDC authentication
         const authRequest = {
-            server_id: selectedServer.id,
-            auth_method_id: authMethod.id,
-            scope_id: null
+            serverId: selectedServer.id,
+            authMethodId: authMethod.id,
+            scopeId: null
         };
 
         const authProgress = await window.__TAURI__.core.invoke('initiate_oidc_auth_command', {
@@ -417,24 +449,474 @@ function updateConnectButtonForAuth(isAuthenticating) {
     }
 }
 
-// Show authentication success
-function showAuthenticationSuccess() {
-    const successHTML = `
-        <div class="auth-success">
-            <h2>Authentication Successful!</h2>
-            <p>You have successfully authenticated to ${selectedServer.name}.</p>
-            <button id="continue-to-app">Continue to Application</button>
+// Show authentication success and transition to target selection
+async function showAuthenticationSuccess() {
+    await logger.info('Authentication successful, transitioning to target selection', 'app');
+
+    // Hide the connect button and show target discovery
+    connectButton.style.display = 'none';
+
+    // Start target discovery immediately
+    await showTargetSelection();
+}
+
+// Show target selection UI with real-time fetching
+async function showTargetSelection() {
+    await logger.info('Loading target selection UI', 'targets');
+
+    const targetSelectionHTML = `
+        <div class="target-selection">
+            <div class="target-header">
+                <h2>Select Target</h2>
+                <p>Connected to <strong>${selectedServer.name}</strong></p>
+                <div class="target-actions">
+                    <input type="text" id="target-search" placeholder="Search targets..." class="target-search">
+                    <button id="refresh-targets" class="refresh-btn">↻ Refresh</button>
+                    <button id="back-to-servers" class="back-btn">← Back to Servers</button>
+                </div>
+            </div>
+            <div class="target-list-container">
+                <div id="target-loading" class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Discovering available targets...</p>
+                </div>
+                <div id="target-list" class="target-list" style="display: none;"></div>
+                <div id="target-error" class="error-state" style="display: none;"></div>
+            </div>
         </div>
     `;
 
-    serverListElement.innerHTML = successHTML;
-    updateConnectButtonForAuth(false);
+    serverListElement.innerHTML = targetSelectionHTML;
 
-    // Add continue handler
-    document.getElementById('continue-to-app').addEventListener('click', () => {
-        // TODO: Transition to main application view
-        alert('Transitioning to main application...');
+    // Add event listeners
+    document.getElementById('target-search').addEventListener('input', handleTargetSearch);
+    document.getElementById('refresh-targets').addEventListener('click', refreshTargets);
+    document.getElementById('back-to-servers').addEventListener('click', backToServerSelection);
+
+    // Start target discovery
+    await discoverAndDisplayTargets();
+}
+
+// Discover and display targets
+async function discoverAndDisplayTargets() {
+    const loadingElement = document.getElementById('target-loading');
+    const targetListElement = document.getElementById('target-list');
+    const errorElement = document.getElementById('target-error');
+
+    try {
+        await logger.info('Discovering targets from Boundary server', 'targets');
+
+        // Show loading state
+        loadingElement.style.display = 'block';
+        targetListElement.style.display = 'none';
+        errorElement.style.display = 'none';
+
+        // Discover all targets for the authenticated user
+        const targets = await window.__TAURI__.core.invoke('discover_all_targets_command', {
+            serverId: selectedServer.id
+        });
+
+        await logger.info('Targets discovered successfully', 'targets', { count: targets.length });
+
+        if (targets.length === 0) {
+            showNoTargetsMessage();
+        } else if (targets.length === 1) {
+            // Auto-connect for single target
+            await handleSingleTargetAutoConnect(targets[0]);
+        } else {
+            // Show target selection UI
+            displayTargetList(targets);
+        }
+
+    } catch (error) {
+        await logger.error('Failed to discover targets', 'targets', { error: error.message });
+        showTargetError(error.message || error);
+    }
+}
+
+// Display the list of targets
+function displayTargetList(targets) {
+    const loadingElement = document.getElementById('target-loading');
+    const targetListElement = document.getElementById('target-list');
+
+    // Hide loading, show target list
+    loadingElement.style.display = 'none';
+    targetListElement.style.display = 'block';
+
+    // Store targets globally for search functionality
+    window.availableTargets = targets;
+
+    // Group targets by type for better organization
+    const groupedTargets = groupTargetsByType(targets);
+
+    let targetsHTML = '';
+
+    Object.keys(groupedTargets).forEach(type => {
+        const typeTargets = groupedTargets[type];
+        const typeIcon = getTargetTypeIcon(type);
+
+        targetsHTML += `
+            <div class="target-group">
+                <h3 class="target-group-header">
+                    <span class="target-type-icon">${typeIcon}</span>
+                    ${escapeHtml(type)} (${typeTargets.length})
+                </h3>
+                <div class="target-group-list">
+                    ${typeTargets.map(target => `
+                        <div class="target-item" data-target-id="${target.id}" data-target-type="${target.type}">
+                            <div class="target-info">
+                                <div class="target-name">${escapeHtml(target.name)}</div>
+                                <div class="target-description">${escapeHtml(target.description || 'No description')}</div>
+                                <div class="target-details">
+                                    <span class="target-id">ID: ${escapeHtml(target.id)}</span>
+                                    <span class="target-address">${escapeHtml(target.address || 'Dynamic')}</span>
+                                </div>
+                            </div>
+                            <button class="target-connect-btn" data-target-id="${target.id}">Connect</button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
     });
+
+    targetListElement.innerHTML = targetsHTML;
+
+    // Add click handlers for target connection
+    targetListElement.querySelectorAll('.target-connect-btn').forEach(button => {
+        button.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const targetId = button.getAttribute('data-target-id');
+            const target = targets.find(t => t.id === targetId);
+            if (target) {
+                await handleTargetConnection(target);
+            }
+        });
+    });
+
+    // Add click handlers for target items (select on click)
+    targetListElement.querySelectorAll('.target-item').forEach(item => {
+        item.addEventListener('click', () => {
+            // Remove previous selection
+            targetListElement.querySelectorAll('.target-item').forEach(i => i.classList.remove('selected'));
+            // Add selection to clicked item
+            item.classList.add('selected');
+        });
+    });
+}
+
+// Group targets by type for better organization
+function groupTargetsByType(targets) {
+    const grouped = {};
+
+    targets.forEach(target => {
+        const type = target.type || 'Unknown';
+        if (!grouped[type]) {
+            grouped[type] = [];
+        }
+        grouped[type].push(target);
+    });
+
+    return grouped;
+}
+
+// Get icon for target type
+function getTargetTypeIcon(type) {
+    const icons = {
+        'tcp': '🔗',
+        'ssh': '💻',
+        'rdp': '🖥️',
+        'http': '🌐',
+        'https': '🔒',
+        'Unknown': '❓'
+    };
+    return icons[type] || icons['Unknown'];
+}
+
+// Handle target search
+function handleTargetSearch(event) {
+    const searchTerm = event.target.value.toLowerCase();
+    const targets = window.availableTargets || [];
+
+    if (!searchTerm) {
+        displayTargetList(targets);
+        return;
+    }
+
+    const filteredTargets = targets.filter(target =>
+        target.name.toLowerCase().includes(searchTerm) ||
+        target.description?.toLowerCase().includes(searchTerm) ||
+        target.id.toLowerCase().includes(searchTerm) ||
+        target.address?.toLowerCase().includes(searchTerm)
+    );
+
+    displayTargetList(filteredTargets);
+}
+
+// Refresh targets
+async function refreshTargets() {
+    await logger.info('Refreshing target list', 'targets');
+    await discoverAndDisplayTargets();
+}
+
+// Handle single target auto-connect
+async function handleSingleTargetAutoConnect(target) {
+    await logger.info('Single target found, auto-connecting', 'targets', { targetName: target.name });
+
+    const targetListElement = document.getElementById('target-list');
+    const loadingElement = document.getElementById('target-loading');
+
+    // Show auto-connect message
+    loadingElement.innerHTML = `
+        <div class="auto-connect-state">
+            <div class="spinner"></div>
+            <h3>Auto-connecting to ${escapeHtml(target.name)}</h3>
+            <p>Only one target available, connecting automatically...</p>
+        </div>
+    `;
+
+    // Connect to the single target
+    await handleTargetConnection(target);
+}
+
+// Show no targets message
+function showNoTargetsMessage() {
+    const loadingElement = document.getElementById('target-loading');
+    const targetListElement = document.getElementById('target-list');
+
+    loadingElement.style.display = 'none';
+    targetListElement.style.display = 'block';
+    targetListElement.innerHTML = `
+        <div class="no-targets-state">
+            <h3>No Targets Available</h3>
+            <p>No targets are currently available in your scope.</p>
+            <p>Contact your administrator if you expect to see targets here.</p>
+            <button id="retry-targets" class="retry-btn">Try Again</button>
+        </div>
+    `;
+
+    document.getElementById('retry-targets').addEventListener('click', refreshTargets);
+}
+
+// Show target error
+function showTargetError(errorMessage) {
+    const loadingElement = document.getElementById('target-loading');
+    const errorElement = document.getElementById('target-error');
+
+    loadingElement.style.display = 'none';
+    errorElement.style.display = 'block';
+    errorElement.innerHTML = `
+        <div class="error-content">
+            <h3>Failed to Load Targets</h3>
+            <p>${escapeHtml(errorMessage)}</p>
+            <button id="retry-targets" class="retry-btn">Retry</button>
+        </div>
+    `;
+
+    document.getElementById('retry-targets').addEventListener('click', refreshTargets);
+}
+
+// Handle target connection
+async function handleTargetConnection(target) {
+    await logger.info('Initiating connection to target', 'connection', {
+        targetName: target.name,
+        targetId: target.id
+    });
+
+    try {
+        // Update UI to show connection in progress
+        const connectBtn = document.querySelector(`[data-target-id="${target.id}"]`);
+        if (connectBtn) {
+            connectBtn.disabled = true;
+            connectBtn.textContent = 'Connecting...';
+        }
+
+        // Authorize session for this target
+        await logger.info('Authorizing session for target', 'connection');
+        const authorization = await window.__TAURI__.core.invoke('authorize_session_command', {
+            serverId: selectedServer.id,
+            targetId: target.id
+        });
+
+        // Establish connection
+        await logger.info('Establishing connection', 'connection');
+        const connection = await window.__TAURI__.core.invoke('establish_connection_command', {
+            serverId: selectedServer.id,
+            authorization: authorization,
+            connection_type: "tcp", // Default connection type
+            target_name: target.name
+        });
+
+        await logger.info('Connection established successfully', 'connection', {
+            localAddress: connection.local_address,
+            localPort: connection.local_port
+        });
+
+        // Show connection success and handle RDP launch if applicable
+        await showConnectionSuccess(target, connection);
+
+    } catch (error) {
+        await logger.error('Connection failed', 'connection', { error: error.message });
+
+        // Reset button state
+        const connectBtn = document.querySelector(`[data-target-id="${target.id}"]`);
+        if (connectBtn) {
+            connectBtn.disabled = false;
+            connectBtn.textContent = 'Connect';
+        }
+
+        showError(`Connection failed: ${error.message || error}`);
+    }
+}
+
+// Show connection success and handle post-connection actions
+async function showConnectionSuccess(target, connection) {
+    await logger.info('Connection successful, handling post-connection actions', 'connection');
+
+    // Check if this is an RDP target and launch client if available
+    if (target.type === 'rdp' || target.name.toLowerCase().includes('rdp')) {
+        await handleRDPClientLaunch(target, connection);
+    }
+
+    // Show connection status
+    showConnectionStatus(target, connection);
+}
+
+// Handle RDP client launch
+async function handleRDPClientLaunch(target, connection) {
+    try {
+        await logger.info('Detecting RDP clients for auto-launch', 'rdp');
+
+        const rdpClients = await window.__TAURI__.core.invoke('detect_rdp_clients_command');
+
+        if (rdpClients.length > 0) {
+            const client = rdpClients[0]; // Use first available client
+
+            await logger.info('Launching RDP client', 'rdp', { client: client.name });
+
+            await window.__TAURI__.core.invoke('launch_rdp_client_command', {
+                clientPath: client.path,
+                targetAddress: connection.local_address,
+                targetPort: connection.local_port,
+                targetName: target.name
+            });
+
+            await logger.info('RDP client launched successfully', 'rdp');
+        } else {
+            await logger.warn('No RDP clients detected', 'rdp');
+            showManualConnectionInfo(target, connection);
+        }
+
+    } catch (error) {
+        await logger.error('RDP client launch failed', 'rdp', { error: error.message });
+        showManualConnectionInfo(target, connection);
+    }
+}
+
+// Show manual connection information
+function showManualConnectionInfo(target, connection) {
+    const info = `
+        <div class="manual-connection-info">
+            <h4>Manual Connection Required</h4>
+            <p>Connect manually using these details:</p>
+            <div class="connection-details">
+                <div><strong>Address:</strong> ${connection.local_address}</div>
+                <div><strong>Port:</strong> ${connection.local_port}</div>
+                <div><strong>Target:</strong> ${target.name}</div>
+            </div>
+        </div>
+    `;
+
+    // Add to the target list as a notification
+    const targetListElement = document.getElementById('target-list');
+    const infoDiv = document.createElement('div');
+    infoDiv.className = 'connection-info-notification';
+    infoDiv.innerHTML = info;
+    targetListElement.insertBefore(infoDiv, targetListElement.firstChild);
+}
+
+// Show connection status
+function showConnectionStatus(target, connection) {
+    // Replace target selection with connection monitoring view
+    const connectionStatusHTML = `
+        <div class="connection-status">
+            <div class="connection-header">
+                <h2>Connected to ${escapeHtml(target.name)}</h2>
+                <p>Server: <strong>${selectedServer.name}</strong></p>
+            </div>
+            <div class="connection-details">
+                <div class="connection-info">
+                    <h3>Connection Details</h3>
+                    <div class="detail-item">
+                        <span class="label">Local Address:</span>
+                        <span class="value">${connection.local_address}:${connection.local_port}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Target ID:</span>
+                        <span class="value">${target.id}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Session ID:</span>
+                        <span class="value">${connection.session_id}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="label">Status:</span>
+                        <span class="value status-active">Active</span>
+                    </div>
+                </div>
+                <div class="connection-actions">
+                    <button id="terminate-connection" class="danger-btn">Terminate Connection</button>
+                    <button id="back-to-targets" class="secondary-btn">Back to Targets</button>
+                    <button id="monitor-session" class="primary-btn">Monitor Session</button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    serverListElement.innerHTML = connectionStatusHTML;
+
+    // Add event listeners
+    document.getElementById('terminate-connection').addEventListener('click', () => terminateConnection(connection));
+    document.getElementById('back-to-targets').addEventListener('click', showTargetSelection);
+    document.getElementById('monitor-session').addEventListener('click', () => showSessionMonitoring(connection));
+}
+
+// Terminate connection
+async function terminateConnection(connection) {
+    try {
+        await logger.info('Terminating connection', 'connection', { sessionId: connection.session_id });
+
+        await window.__TAURI__.core.invoke('terminate_connection_command', {
+            session_id: connection.session_id
+        });
+
+        await logger.info('Connection terminated successfully', 'connection');
+
+        // Return to target selection
+        await showTargetSelection();
+
+    } catch (error) {
+        await logger.error('Failed to terminate connection', 'connection', { error: error.message });
+        showError(`Failed to terminate connection: ${error.message || error}`);
+    }
+}
+
+// Show session monitoring (placeholder for future implementation)
+function showSessionMonitoring(connection) {
+    alert(`Session monitoring for ${connection.session_id} - Coming soon!`);
+}
+
+// Back to server selection
+function backToServerSelection() {
+    // Reset state
+    selectedServer = null;
+
+    // Show connect button again
+    connectButton.style.display = 'block';
+    updateConnectButton();
+
+    // Reload servers
+    loadServers();
 }
 
 // Show error message

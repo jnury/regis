@@ -104,3 +104,7 @@ WixTools/
 
 # Boundary CLI
 boundary-cli/*
+
+# Local test configurations (may contain real servers names)
+local-test-config.json
+local-test-servers.json
